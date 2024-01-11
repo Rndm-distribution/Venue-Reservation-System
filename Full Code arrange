@@ -1,0 +1,863 @@
+from datetime import datetime
+import re
+
+class Hall:
+    def __init__(self, hall_id, hall_name, hall_description, hall_pax, availability_status, rate_price_per_day):
+        self.hall_id = hall_id
+        self.hall_name = hall_name
+        self.hall_description = hall_description
+        self.hall_pax = hall_pax
+        self.availability_status = availability_status
+        self.rate_price_per_day = rate_price_per_day
+
+"""
+Function name: search_hall
+Description: Search for a hall in the system using the hall ID
+"""
+def search_hall(hall_id_to_search):
+        with open("hall_data.txt", "r") as f:
+            lines = f.readlines()
+        for line in lines:
+            hall_id, hall_name, hall_description, hall_pax, availability_status, rate_price_per_day = line.split(",")
+            if hall_id_to_search == hall_id:
+                print(f"{hall_id}. {hall_name}, Description: {hall_description}, Maximum {hall_pax} people, Availability Status: {availability_status}, Rate Price per hour: RM{rate_price_per_day}\n")
+            else:
+                pass
+
+class HallManagementSystem:
+    halls = []  # class variable
+
+    @classmethod
+    def add_hall(cls, hall):
+        cls.halls.append(hall)
+
+    """
+    Function name: view_all_halls
+    Description: View all halls in the system
+    """
+    @classmethod
+    def view_all_halls(cls):
+        with open("hall_data.txt", "r") as f:
+                lines = f.readlines()
+        for line in lines:
+            hall_id, hall_name, hall_description, hall_pax, availability_status, rate_price_per_day = line.split(",")
+            print(f"{hall_id}. {hall_name}, Description: {hall_description}, Maximum {hall_pax} people, Availability Status: {availability_status}, Rate Price per hour: RM{rate_price_per_day}\n")
+
+
+hall_rates = {
+    "Auditorium": 300.00,
+    "Banquet Hall": 100.00,
+    "Meeting Room": 50.00
+}
+
+"""
+Function name: add_hall_information
+Description: Add new hall information to the system
+"""
+def add_hall_information():
+    hall_id = input("Enter Hall ID: ")
+    hall_name = input("Enter Hall Name: ")
+    hall_description = input("Enter Hall Description: ")
+    hall_pax = int(input("Enter Hall Pax: "))
+    availability_status = input("Enter Hall Availability Status: ")
+    rate_price_per_day = float(input("Enter Rate Price per hour: "))
+    with open("hall_data.txt", "r") as f:
+        print("Hall information added successfully.")
+        with open('hall_data.txt', 'a') as file:
+            file.write(f"{hall_id},{hall_name},{hall_description},{hall_pax},{availability_status},{rate_price_per_day}\n")
+
+"""
+Function name: admin_login
+Description: Way for admin to login to the system
+"""
+def admin_login():
+    while True:
+        admin_name = input("Enter Admin name: ")
+        admin_password = input("Enter Admin password: ")
+        with open("admin_data.txt", "r") as admin:
+            admin_file = admin.readlines()
+            for line in admin_file:
+                name, password = line.split(",")
+                if admin_name == name and admin_password == password:
+                    print("Login Success!")
+                    admin_main()
+            else:
+                print("Incorrect. Please try again.")
+
+class EventBooking:
+    def __init__(self):
+        self.bookings = {}
+        self.allowed_halls = {
+            "1": {"name": "Auditorium", "price": 300},
+            "2": {"name": "Banquet Hall", "price": 100},
+            "3": {"name": "Meeting Room", "price": 50}
+        }
+
+    def print_hall_list(self):
+        print("List of Hall IDs")
+        for key, value in self.allowed_halls.items():
+            print(f"{key}. {value['name']}")
+
+    def book_event(self, event_name, event_description, hall_id, pax, date, start_time, duration, payment_price, username):
+        hall_info = self.allowed_halls.get(hall_id)
+        with open("user_data.txt", "r") as x:
+            if not hall_info:
+                print("Invalid hall ID. Please enter a valid hall ID.")
+                return False
+            if not event_name:
+                print("Invalid event name. Please enter a valid event name.")
+                return False
+            if not event_description:
+                print("Invalid event description. Please enter a valid event description.")
+                return False
+            if not pax.isdigit() or int(pax) <= 0:
+                print("Invalid number of guests. Please enter a valid number of guests.")
+                return False
+            if len(date) != 10:
+                print("Invalid date format. Please use YYYY-MM-DD")
+                return False
+            if not duration.isdigit() or int(duration) <= 0:
+                print("Invalid duration. Please enter a valid number of hours.")
+                return False
+            if username not in x.read():
+                print("Account does not exist. Please login to proceed.")
+                return False
+
+        payment_price = hall_info["price"] * int(duration)
+
+        booking_details = {
+            'Event Name': event_name,
+            'Event Description': event_description,
+            'Hall Name': hall_info['name'],
+            'Number of Guests': int(pax),
+            'Date': date,
+            'Start Time': start_time,
+            'Duration (hours)': int(duration),
+            'Total Price': payment_price
+        }
+        self.bookings[hall_info['name']] = booking_details
+
+        print("\nYou have entered the following details:")
+        for key, value in booking_details.items():
+            print(f"{key}: {value}")
+
+        confirm_booking = input("\nConfirm booking? (yes/no): ").lower()
+        if confirm_booking == 'yes':
+            print("Booking Confirmed!")
+            return True
+        else:
+            print("Booking Cancelled.")
+            return False
+
+"""
+Function name: logout
+Description: Logout of the system
+"""
+def logout():
+        print("Logout successful!")
+        print("Thank you for using our booking system!")
+        exit()
+
+"""
+Function name: edit_profile
+Description: Edit user's profile information
+"""
+def edit_profile(username_input):
+    print("")
+    print("Edit your profile information")
+    print("-----------------------------------")
+    with open("user_data.txt", "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            username, password, first_name, last_name, dob, contact, email = line.split(':')
+    with open("user_data.txt", "w") as f:
+        for line in lines:
+            if username_input in line and username_input == username:
+                edit_username = input("Edit username? y/n: ")
+                if edit_username == "y":
+                    username = input("Enter new username: ")
+                edit_password = input("Edit password? y/n: ")
+                if edit_password == "y":
+                        password = input("Enter Password: \n"
+                         "It must have at least six characters.\n"
+                         "at least one capital letter.\n"
+                         "at least one number, and use a symbol: ")
+                edit_first_name = input("Edit first name? y/n: ")
+                if edit_first_name == "y":
+                    first_name = input("Enter new first name: ")
+                edit_last_name = input("Edit last name? y/n: ")
+                if edit_last_name == "y":
+                    last_name = input("Enter new last name: ")
+                edit_dob = input("Edit date of birth? y/n: ")
+                if edit_dob == "y":
+                    dob = input("Enter new date of birth (DD/MM/YYYY): ")
+                edit_contact = input("Edit contact number? y/n: ")
+                if edit_contact == "y":
+                    contact = input("Enter new contact number: ")
+                edit_email = input("Edit email? y/n: ")
+                if edit_email == "y":
+                    email = input("Enter new email: ")
+                f.write(f"{username}:{password}:{first_name}:{last_name}:{dob}:{contact}:{email}\n")
+                print("Profile edited successfully!")
+                print("-----------------------------------")
+                print(f"Your NEW profile information is:")
+                print(f"Username: {username}")
+                print(f"Password: {password}")
+                print(f"First Name: {first_name}")
+                print(f"Last Name: {last_name}")
+                print(f"Date of Birth DD/MM/YYYY: {dob}")
+                print(f"Contact Number: {contact}")
+                print(f"Email: {email}")
+                print("-----------------------------------")
+            else:
+                f.write(line)
+
+"""
+Function name: edit_booking
+Description: Edit any booking the user made
+"""
+def edit_booking(id):
+    name = input("Enter your Event Name: ")
+    with open("bookings.txt", "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            event_name, event_description, hall_id, pax, date, start_time, duration, payment_price, username = line.split(',')
+    with open("bookings.txt", "w") as f:
+        for line in lines:
+            if id in line and name in line:
+                edit_name = input("Edit event name? y/n: ")
+                if edit_name == "y":
+                    event_name = input("Enter new event name: ")
+                edit_description = input("Edit event description? y/n: ")
+                if edit_description == "y":
+                    event_description = input("Enter new event description: ")
+                edit_hall_id = input("Edit hall id? y/n: ")
+                if edit_hall_id == "y":
+                    booking_system = EventBooking()
+                    booking_system.print_hall_list()
+                    hall_id = input("Enter new hall id: ")
+                edit_pax = input("Edit number of pax? y/n: ")
+                if edit_pax == "y":
+                    pax = input("Enter new number of pax: ")
+                edit_date = input("Edit date? y/n: ")
+                if edit_date == "y":
+                    date = input("Enter new date (DD/MM/YYYY): ")
+                edit_start_time = input("Edit start time? y/n: ")
+                if edit_start_time == "y":
+                    start_time = datetime.strptime(input("Enter new Start time (24-Hour format & HH:MM): "), "%H:%M")
+                    start_time = start_time.time()
+                edit_duration = input("Edit Duration of Event? y/n: ")
+                if edit_duration == "y":
+                    duration = input("Enter the new Duration in HOUR: ")
+                if hall_id == "1":
+                    payment_price = int(duration) * 300
+                elif hall_id == "2 Hall":
+                    payment_price = int(duration) * 100
+                elif hall_id == "3":
+                    payment_price = int(duration) *50
+                f.write(f"{event_name},{event_description},{hall_id},{pax},{date},{start_time},{duration},{payment_price},{username}\n")
+                print("Booking edited successfully!")
+                print(f"The new payment price is RM{payment_price}")
+                print("-----------------------------------")
+                print(f"Your NEW booking information is:")
+                print(f"Event Name: {event_name}")
+                print(f"Event Description: {event_description}")
+                print(f"Hall ID: {hall_id}")
+                print(f"Number of Pax: {pax}")
+                print(f"Date: {date}")
+                print(f"Start Time: {start_time}")
+                print(f"Duration of Event: {duration} Hour")
+                print(f"Total Payment Price: RM{payment_price}")
+                print(f"Booked by: {username}")
+                print("-----------------------------------")
+            else:
+                f.write(line)
+
+"""
+Function name: search_by_name
+Description: Search booking information by event name
+"""                
+def search_by_name(id):
+    name = input("Enter name of event: ")
+    with open("bookings.txt","r") as f:
+        lines = f.readlines()
+        for line in lines:
+            event_name, event_description, hall_id, pax, date, start_time, duration, payment_price, username = line.strip().split(',')
+            if name == event_name:
+                print("-----------------------------------")
+                print(f"Event Name: {event_name}")
+                print(f"Event Description: {event_description}")
+                print(f"Hall ID: {hall_id}")
+                print(f"Number of Pax: {pax}")
+                print(f"Date: {date}")
+                print(f"Start Time: {start_time}")
+                print(f"Duration: {duration} hour")
+                print(f"Total Payment Price: RM{payment_price}")
+                print(f"Booked by: {username}")
+                print("-----------------------------------")
+                search_booking(id)
+            else:
+                pass
+
+"""
+Function name: search_by_username
+Description: Search booking information by username of the person who booked it
+"""
+def search_by_username(id):
+    name = input("Enter username: ")
+    with open("bookings.txt","r") as f:
+        lines = f.readlines()
+        for line in lines:
+            event_name, event_description, hall_id, pax, date, start_time, duration, payment_price, username = line.strip().split(',')
+            if name == username:
+                print("-----------------------------------")
+                print(f"Event Name: {event_name}")
+                print(f"Event Description: {event_description}")
+                print(f"Hall ID: {hall_id}")
+                print(f"Number of Pax: {pax}")
+                print(f"Date: {date}")
+                print(f"Start Time: {start_time}")
+                print(f"Duration: {duration} hour")
+                print(f"Total Payment Price: RM{payment_price}")
+                print(f"Booked by: {username}")
+                print("-----------------------------------")
+                search_booking(id)
+            else:
+                pass
+
+"""
+Function name: search_by_hall
+Description: Search booking information by hall ID/hall type
+"""
+def search_by_hall(id):
+    booking_system = EventBooking()
+    booking_system.print_hall_list()
+    name = input("Enter hall ID: ")
+    with open("bookings.txt","r") as f:
+        lines = f.readlines()
+        for line in lines:
+            event_name, event_description, hall_id, pax, date, start_time, duration, payment_price, username = line.strip().split(',')
+            if name == hall_id:
+                print("-----------------------------------")
+                print(f"Event Name: {event_name}")
+                print(f"Event Description: {event_description}")
+                print(f"Hall ID: {hall_id}")
+                print(f"Number of Pax: {pax}")
+                print(f"Date: {date}")
+                print(f"Start Time: {start_time}")
+                print(f"Duration: {duration} hour")
+                print(f"Total Payment Price: RM{payment_price}")
+                print(f"Booked by: {username}")
+                print("-----------------------------------")
+                search_booking(id)
+            else:
+                pass
+
+"""
+Function name: search_booking
+Description: Main menu for searching booking information
+"""
+def search_booking(username):
+    print("")
+    print("Search booking information")
+    print("-----------------------------------")
+    print("1. Search by event name")
+    print("2. Search by username")
+    print("3. Search by Hall ID")
+    print("4. Exit")
+    search_choice = input("Enter your choice: ")
+    if search_choice == "1":
+        search_by_name(username)
+    elif search_choice == "2":
+        search_by_username(username)
+    elif search_choice == "3":
+        search_by_hall(username)
+    elif search_choice == "4":
+        logout()
+
+"""
+Function name: cancel_booking
+Description: Cancel a booking that the user made
+"""
+def cancel_booking(id):
+    name = input("Enter your Event Name: ")
+    with open("bookings.txt", "r") as f:
+        lines = f.readlines()
+    with open("bookings.txt", "w") as f:
+        for line in lines:
+            if name in line and id in line:
+                print(line)
+                f.write("")
+            else:
+                f.write(line)
+
+"""
+Function name: event_booking
+Description: Make a booking for an event
+"""
+def event_booking(username):
+    print("")
+    booking_system = EventBooking()
+    booking_system.print_hall_list()
+    print("")
+    print("Make a booking")
+    print("-----------------------------------")
+    event_name = input("Enter event name: ")
+    event_description = input("Enter event description: ")
+    hall_id = input("Enter Hall ID (1/2/3): ")
+    pax = input("Enter number of guests: ")
+    date = input("Enter date (DD/MM/YYYY): ")
+    start_time = input("Enter start time in 24-hour format (HH:MM): ")
+    duration = input("Enter duration of booking (hours): ")
+    if hall_id == "1":
+        payment_price = int(duration) * 300
+    elif hall_id == "2":
+        payment_price = int(duration) * 100
+    elif hall_id == "3":
+        payment_price = int(duration) *50
+
+    if hall_id not in booking_system.allowed_halls:
+        print("Invalid hall ID. Please enter a valid hall ID.")
+        return
+
+    booking_successful = booking_system.book_event(event_name, event_description, hall_id, pax, date, start_time, duration, payment_price, username)
+
+    if not booking_successful:
+        print("Booking Unsuccessful")
+    else:
+        with open("bookings.txt", "a") as f:
+            f.write(f"{event_name},{event_description},{hall_id},{pax},{date},{start_time},{duration},{payment_price},{username}\n")
+
+"""
+Function name: getdetails
+Description: User sign up a new account
+"""
+def getdetails():
+    while True:
+        username = input("Enter Username: ")
+        password = input("Enter Password: \n"
+                         "It must have at least six characters.\n"
+                         "at least one capital letter.\n"
+                         "at least one number, and use a symbol: ")
+        if (
+            len(password) >= 6 and
+            any(char.isupper() for char in password) and
+            any(char.isdigit() for char in password) and
+            re.search(r'[!@#\$%\^&\*\(\)_\+\-=\[\]\{\};:\'",<>\./?\\|]', password)
+        ):
+            first_name = input("Enter first name: ")
+            last_name = input("Enter last name: ")
+
+            # Birth Day
+            while True:
+                try:
+                    date_birth = input("Enter your date of birth (DD/MM/YYYY): ")
+                    birth_date = datetime.strptime(date_birth, '%d/%m/%Y')
+                    current_year = datetime.now().year
+
+                    if (
+                        birth_date.year < 1900 or
+                        birth_date.year > current_year or
+                        birth_date.month < 1 or
+                        birth_date.month > 12 or
+                        birth_date.day < 1 or
+                        birth_date.day > 31
+                    ):
+                        print("Invalid date. Please enter a valid date of birth.")
+                        continue
+
+                    break
+                except ValueError:
+                    print("Invalid date format. Please enter a valid date in the format DD/MM/YYYY.")
+                    continue
+
+            contact_number = input("Enter your contact number: ")
+            email = input("Enter your email: ")
+
+            print("Please confirm the following information:")
+            print("Username:", username)
+            print("Password:", "****")  # Hide password
+            print("First Name:", first_name)
+            print("Last Name:", last_name)
+            print("Date of Birth:", date_birth)
+            print("Contact Number:", contact_number)
+            print("Email:", email)
+
+            confirmation = input("Is the information correct? (yes/no): ")
+
+            if confirmation.lower() == "yes":
+                with open("user_data.txt", "r") as x:
+                    if username not in x:
+                        print("You have created the account.")
+                        with open('user_data.txt', 'a') as file:
+                            file.write(f"{username}:{password}:{first_name}:{last_name}:{date_birth}:{contact_number}:{email}\n")
+                        break
+                    else:
+                        print("The account already exists.")
+            elif confirmation.lower() == "no":
+                print("Please re-enter your information.")
+            else:
+                print("Invalid input. Please enter 'yes' or 'no'.")
+        else:
+            print("Password error. Check again")
+
+"""
+Function name: user_main
+Description: Main menu for User
+"""
+def user_main(username):
+                    print("")
+                    print("Welcome, " + username + "!")
+                    print("-----------------------------------")
+                    print("Welcome to the User Main Menu")
+                    print("1. Make a booking")
+                    print("2. Cancel a booking")
+                    print("3. Search the booking information")
+                    print("4. Edit the booking information")
+                    print("5. Update Profile information")
+                    print("6. Logout the system")
+                    user_choice = input("Enter choice: ")
+                    if user_choice == "1":
+                        event_booking(username)
+                    if user_choice == "2":
+                        cancel_booking(username)
+                    if user_choice == "3":
+                        search_booking(username)
+                    if user_choice == "4":
+                        edit_booking(username)
+                    if user_choice == "5":
+                        edit_profile(username)   
+                    if user_choice == "6":
+                        logout()                
+
+"""
+Function name: checkdetails
+Description: User sign in to their account
+"""
+def checkdetails():
+    while True:
+        username_input = input("Enter User name: ")
+        password_input = input("Enter Password: ")
+        with open("user_data.txt", "r") as x:
+                lines_x = x.readlines()
+                for line_x in lines_x:
+                    username, password, first_name, last_name, date_birth, contact_number, email = line_x.split(":")
+                for line_x in lines_x:
+                    if username == username_input and password == password_input:
+                        user_main(username) 
+                    else:
+                        pass     
+
+"""
+Function name: user_login
+Description: User sign in to their account or sign up a new account
+"""
+def user_login():
+    while True:
+        print("Please choose what you would like to do.")
+        choice = int(input("For Signing Up Type 1 and For Signing in Type 2: "))
+        if choice == 1:
+            getdetails()
+        elif choice == 2:
+            while True:
+                if checkdetails():
+                    booking_system = EventBooking()
+                    booking_system.print_hall_list()
+                    return
+                else:
+                    print("Invalid username or password. Please try again.")
+                    retry = input("Retry? (yes/no)")
+                    if retry.lower() != 'yes':
+                        break
+        else:
+            print("Invalid choice. Try Again.")
+
+"""
+Function name: admin_main
+Description: Main menu for Admin
+"""
+def admin_main():
+    while True:
+        print("Hall Management System Menu:")
+        print("1. Add Hall Information")
+        print("2. View All Halls")
+        print("3. Search for a Hall")
+        print("4. Edit Hall Information")
+        print("5. Delete a Hall")
+        print("6. View/Modify Booking Information")
+        print("7. View/Modify User Information")  # Added option for user information
+        print("8. Exit")
+
+        choice = input("Enter your choice (from 1 to 8): ")
+
+        if choice == '1':
+            add_hall_information()
+        elif choice == '2':
+            HallManagementSystem.view_all_halls()
+        elif choice == '3':
+            hall_id_to_search = input("Enter Hall ID to search: ")
+            search_hall(hall_id_to_search)
+        elif choice == '4':
+            HallManagementSystem.view_all_halls()
+            hall_id_to_edit = input("Enter Hall ID to edit: ")
+            with open("hall_data.txt", "r") as f:
+                lines = f.readlines()
+            with open("hall_data.txt", "w") as f:
+                for line in lines:
+                    hall_id, hall_name, hall_description, hall_pax, availability_status, rate_price_per_day = line.split(",")
+                    if hall_id_to_edit == hall_id:
+                        hall_name = input("Enter Hall Name: ")
+                        hall_description = input("Enter Hall Description: ")
+                        hall_pax = int(input("Enter Hall Pax: "))
+                        availability_status = input("Enter Hall Availability Status: ")
+                        rate_price_per_day = float(input("Enter Rate Price per hour: "))
+                        f.write(f"{hall_id},{hall_name},{hall_description},{hall_pax},{availability_status},{rate_price_per_day}\n")
+                        print("Hall information edited successfully.")
+                        print("------------------------------------")
+                        print(f"Your NEW hall information is:")
+                        print(f"{hall_id}. {hall_name}, Description: {hall_description}, Maximum {hall_pax} people, Availability Status: {availability_status}, Rate Price per hour: RM{rate_price_per_day}")
+                        print("------------------------------------")
+                    else:
+                        f.write(line)
+        elif choice == '5':
+            HallManagementSystem.view_all_halls()
+            hall_id_to_delete = input("Enter Hall ID to delete: ")
+            with open("hall_data.txt", "r") as f:
+                lines = f.readlines()
+            with open("hall_data.txt", "w") as f:
+                for line in lines:
+                    hall_id, hall_name, hall_description, hall_pax, availability_status, rate_price_per_day = line.split(",")
+                    if hall_id_to_delete == hall_id:
+                        f.write("")
+                    else:
+                        f.write(line)
+        elif choice == '6':
+            while True:
+                print("1. View Booking Information")
+                print("2. Search Booking Information")
+                print("3. Edit Booking Information")
+                print("4. Delete Booking Information")
+                file_path = input("Enter your sub-choice (1 to 4, or 0 to go back to Main Menu): ")
+                if file_path == '1':
+                    while True:
+                        try:
+                            booking_view = input("Do you want to see booking information (y/n):")
+                            if booking_view == 'y':
+                                with open('bookings.txt', 'r') as file:
+                                    view_booking = file.readlines()
+                                    print("Current content:")
+                                for i, line in enumerate(view_booking, start=1):
+                                    print(f"{i}. {line.strip()}")
+
+
+                            elif booking_view == 'n':
+                                print("Go Back to Main Menu")
+                                print("-----------------------------")
+                                admin_main()
+
+                            else:
+                                print("Invalid Input, Please Try Again!")
+
+                        except:
+                            break
+
+                elif file_path == '2':
+                    print("Hello Welcome to Search Engine :)")
+                    admin = "admin"
+                    search_booking(admin)
+
+                elif file_path == '3':
+                    with open('bookings.txt', 'r') as file:
+                        lines = file.readlines()
+                        print("Current content:")
+                    for i, line in enumerate(lines, start=1):
+                        print(f"{i}. {line.strip()}")
+
+
+                    def edit_line(file_path, line_number, new_content):
+                        if 1 <= line_number <= len(lines):
+                            lines[line_number - 1] = new_content + '\n'
+
+                            with open('bookings.txt', 'w') as file:
+                                file.writelines(lines)
+                            print(f"Line {line_number} edited successfully.")
+                            print("---------------------------")
+                        else:
+                            print(f"Error: Line number {line_number} is out of range.")
+
+
+                    while True:
+                        try:
+                            line_number_to_edit = int(input("Enter the line number to edit (0 to Main Menu): "))
+                            if line_number_to_edit == 0:
+                                break
+
+                            new_content = input("Enter the new content for the line: ")
+                            edit_line(file_path, line_number_to_edit, new_content)
+
+                            with open('bookings.txt', 'r') as file:
+                                lines = file.readlines()
+                                print("Current content:")
+                            for i, line in enumerate(lines, start=1):
+                                print(f"{i}. {line.strip()}")
+
+                        except ValueError:
+                            print("Error: Please enter a valid line number.")
+
+                    print("Back to Main Menu")
+                    edit_line(file_path, line_number_to_edit, new_content)
+
+                elif file_path == '4':
+                    while True:
+                        try:
+                            with open('bookings.txt', 'r') as file:
+                                lines = file.readlines()
+                                print("Current content:")
+                            for i, line in enumerate(lines, start=1):
+                                print(f"{i}. {line.strip()}")
+
+                            line_number_to_delete = int(input("Enter the line number to delete (0 to Main Menu): "))
+
+                            if 1 <= line_number_to_delete <= len(lines):
+                                del lines[line_number_to_delete - 1]
+                                with open('bookings.txt', 'w') as file:
+                                    file.writelines(lines)
+
+                                print(f"Line {line_number_to_delete} has been deleted from booking data.")
+                                print("---------------------------------")
+
+                            elif line_number_to_delete == 0:
+                                print("Back to main menu")
+                                break
+
+                            else:
+                                print("Invalid line number. Please enter a valid line number.")
+                                print("---------------------------------")
+
+                        except ValueError:
+                            print("Please insert the correct line")
+                            print("---------------------------------")
+
+        elif choice == '7':
+            file_path2 = 'user_data.txt'
+            while True:
+                print("1. View all User Information")
+                print("2. Search User Information")
+                print("3. Edit User Information")
+                print("4. Delete User Information")
+                sub_choice = input("Enter your sub-choice (1 to 4, or 0 to go back to Main Menu): ")
+
+                if sub_choice == '0':
+                    print("Back to Main Menu")
+                    break
+
+                elif sub_choice == '1':
+                    with open(file_path2, 'r') as file:
+                        view_booking = file.readlines()
+                        print("Current user information:")
+                    for i, line in enumerate(view_booking, start=1):
+                        print(f"{i}. {line.strip()}")
+                    print("-----------------------------")
+
+                elif sub_choice == '2':
+                    print("Hello Welcome to Search Engine :)")
+                    search_booking(admin)
+
+                elif sub_choice == '3':
+                    with open(file_path2, 'r') as file:
+                        lines = file.readlines()
+                        print("Current user information:")
+                    for i, line in enumerate(lines, start=1):
+                        print(f"{i}. {line.strip()}")
+                    print("---------------------------")
+
+
+                    def edit_line(file_path, line_number, new_content):
+                        if 1 <= line_number <= len(lines):
+                            lines[line_number - 1] = new_content + '\n'
+
+                            with open(file_path, 'w') as file:
+                                file.writelines(lines)
+                            print(f"Line {line_number} edited successfully.")
+                            print("---------------------------")
+                        else:
+                            print(f"Error: Line number {line_number} is out of range.")
+
+
+                    while True:
+                        try:
+                            line_number_to_edit = int(input("Enter the line number to edit (0 to Main Menu): "))
+                            if line_number_to_edit == 0:
+                                break
+
+                            new_content = input("Enter the new content for the line: ")
+                            edit_line(file_path2, line_number_to_edit, new_content)
+
+                            with open(file_path2, 'r') as file:
+                                lines = file.readlines()
+                                print("Current user information:")
+                            for i, line in enumerate(lines, start=1):
+                                print(f"{i}. {line.strip()}")
+
+                        except ValueError:
+                            print("Error: Please enter a valid line number.")
+
+                    print("Back to Main Menu")
+
+                elif sub_choice == '4':
+                    while True:
+                        try:
+                            with open(file_path2, 'r') as file:
+                                lines = file.readlines()
+                                print("Current user information:")
+                            for i, line in enumerate(lines, start=1):
+                                print(f"{i}. {line.strip()}")
+
+                            line_number_to_delete = int(input("Enter the line number to delete (0 to Main Menu): "))
+
+                            if 1 <= line_number_to_delete <= len(lines):
+                                del lines[line_number_to_delete - 1]
+                                with open(file_path2, 'w') as file:
+                                    file.writelines(lines)
+
+                                print(f"Line {line_number_to_delete} has been deleted from user data.")
+                                print("---------------------------------")
+
+                            elif line_number_to_delete == 0:
+                                print("Back to Main Menu")
+                                break
+
+                            else:
+                                print("Invalid line number. Please enter a valid line number.")
+                                print("---------------------------------")
+
+                        except ValueError:
+                            print("Please insert the correct line")
+                            print("---------------------------------")
+
+        elif choice == '8':
+            print("Exiting Hall Management System. Goodbye!")
+            logout()  # logout system
+
+
+"""
+Function name: start_screen
+Description: The first thing user see when opening the program and choose to login as user or admin
+"""
+def start_screen():
+    print("Welcome to the Event Booking System!")
+    print("1. User Login/Registration")
+    print("2. Admin")
+    print("3. Exit")
+    choice = input("Enter your choice: ")
+    if choice == "1":
+        user_login()
+    elif choice == "2":
+        admin_login()
+    elif choice == "3":
+        exit()
+    else:
+        print("Invalid input. Please try again.")
+        start_screen()
+
+start_screen()
